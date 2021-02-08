@@ -13,6 +13,7 @@ const gcmq = require("gulp-group-css-media-queries");
 const cleanCSS = require("gulp-clean-css");
 const sourcemaps = require("gulp-sourcemaps");
 const uglify = require("gulp-uglify");
+const pug = require("gulp-pug");
 const svgo = require("gulp-svgo");
 const svgSprite = require("gulp-svg-sprite");
 const browserSync = require("browser-sync").create();
@@ -25,9 +26,13 @@ task("clean", () => {
   return src("dist/**/*", { read: false }).pipe(rm());
 });
 
-task("copy:html", () => {
-  return src("src/*.html")
-    .pipe(dest("dist"))
+task("templates", () => {
+  return src("./src/templates/pages/*.pug")
+    .pipe(pug({
+        pretty: "\t",
+      })
+    )
+    .pipe(dest("./dist"))
     .pipe(reload({ stream: true }));
 });
 
@@ -56,7 +61,7 @@ task("styles", () => {
 });
 
 task("scripts", () => {
-  return src("./src/index.js")
+  return src("./src/js/index.js")
     .pipe(webpackStream(webpackConfig), webpack)
     .pipe(gulpif(env === "prod", uglify()))
     .pipe(dest("dist"))
@@ -95,9 +100,9 @@ task("server", () => {
 });
 
 task("watch", () => {
-  watch("./src/*.html", series("copy:html"));
+  watch("./src/templates/**/*.pug", series("templates"));
   watch("./src/styles/**/*.scss", series("styles"));
-  watch("./src/scripts/*.js", series("scripts"));
+  watch("./src/js/**/*.js", series("scripts"));
   watch("./src/img/icons/*.svg", series("icons"));
 });
 
@@ -105,11 +110,11 @@ task(
   "default",
   series(
     "clean",
-    parallel("copy:html", "styles", "scripts", "icons"),
+    parallel("templates", "styles", "scripts", "icons"),
     parallel("watch", "server")
   )
 );
 task(
   "build",
-  series("clean", parallel("copy:html", "styles", "scripts", "icons"))
+  series("clean", parallel("templates", "styles", "scripts", "icons"))
 );
